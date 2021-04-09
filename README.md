@@ -12,4 +12,7 @@ IE. \
 \
 1/1/2021 - balance 1000\
 1/2/2021 - balance 1200, income 200, delta = +200\
-1/3/2021 - balance = balance + delta
+1/3/2021 - balance = balance + delta\
+
+
+### Random.csv will eventually be replaced with a dir of month json objects to avoid loading the entirety of every month into memory. Will look at how costly that would be, would not assume too much but python is already heavy so if I can put lighten some of the burden then why not.
