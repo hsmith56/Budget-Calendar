@@ -1,46 +1,31 @@
 import calendar
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import random
-
-"""
-print(calendar.month(year, month))
-print(calendar.weekday(year=year, month=month, day=day))
-days_in_the_year = (dt.date(year, month, day) - dt.date(year,1,1)).days + 1
-print("{1}/{2}/{0}".format(year, month, day))
-
-def __init__(self, year: int = dt.date.today().year, month: int =dt.date.today().month, day: int = dt.date.today().day, day_of_year: int = 0):
-        self.year = year
-        self.month = month
-        self.day = day
-        self.day_of_year = (dt.date(self.year, self.month, self.day) - dt.date(self.year,1,1)).days + 1
-        # init day then look for date in some state file maintaining stats
-        self.balance = 0.0
-"""
 
 def myconverter(o):
     if isinstance(o, datetime):
         return o.__str__()
 
 class date_info:
-    def __init__(self, time_delta: int = 0, balance: int = 0, loan: int = 0, income: int = 0, bills: int = 0, spending: int = 0, savings_goals: int = 0):
-        self.time_delta = datetime.now() - timedelta(days=time_delta)
+    def __init__(self, date = datetime.now(), balance: int = 0, loan: int = 0, income: int = 0, bills: int = 0, spending: int = 0, savings_goals: int = 0):
+        self.date = date # maybe make this a datetime obj instead???
         self.loan = loan
-        self.income = 1747.5 if self.time_delta.day == 1 or self.time_delta.day == 15 else income
+        self.income = 1747.50 if self.date.day == 1 or self.date.day == 15 else income
         self.bills = bills
         self.spending = spending
         self.savings_goals = savings_goals
         self.balance = balance + self.income - self.loan - self.spending - self.bills
 
     def __lt__(self, other):
-        return self.time_delta < other.time_delta
+        return self.date < other.date
     
     def __eq__(self, other):
-        return self.time_delta == other.time_delta
+        return self.date == other.date
 
     def __hash__(self):
-        return hash(self.time_delta)
+        return hash(self.date)
 
     def update(self):
         delta = self.balance
@@ -48,7 +33,7 @@ class date_info:
         return self.balance - delta
                
     def __repr__(self):
-        return "{0}/{1}/{2} - Balance: ${3}".format(self.time_delta.month,self.time_delta.day,self.time_delta.year,self.balance)
+        return "{0}/{1}/{2} - Balance: ${3}".format(self.date.month,self.date.day,self.date.year,self.balance)
 
 class Month:
     def __init__(self, name: str = "", days: [date_info] = [], year: int = 2021):
@@ -62,10 +47,10 @@ class Month:
             print(jsonStr)
 
     def __lt__(self, other):
-        return self.days[0].time_delta < other.days[0].time_delta
+        return self.days[0].date < other.days[0].date
     
     def __eq__(self, other):
-        return self.days[0].time_delta == other.days[0].time_delta   
+        return self.days[0].date == other.days[0].date   
 
     def preserve_bal(self, start_date: int = 0, to_add: int = 0):
         # Only useful on adjusting historic entries
@@ -78,37 +63,48 @@ class Month:
         except IndexError:
             print(f"Index {start_date} out of range {len(self.days)}")
 
-dates = []
-for i in range(datetime.now().day,0,-1):
-    dates.append(date_info(time_delta = i-1))
+def build_month(month = datetime.now().month, year = datetime.now().year) -> [date_info]:
+    dates = []
+    now = datetime.now()
+    if now.month > month and month > 0 and month <13:
+        if now.year >= year:
+            now = calendar.monthrange(year,month)[1]
+    else:
+        now = now.day
+    for i in range(1,now+1):
+        that_day = date(year, month, i)
+        dates.append(date_info(date=that_day))
+    return dates
 
-curr_month = Month(name=calendar.month_name[4], days=dates, year = datetime.now().year)
+dates = build_month(month = 2, year=2020)
+curr_month = Month(name=calendar.month_name[3], days=dates, year = datetime.now().year)
 
 preserve_index = 0
 curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
 for day in curr_month.days:
      print(day)
 
-curr_month.days[3].bills += 1000
-delta = curr_month.days[3].update()
-preserve_index = 3
-curr_month.preserve_bal(preserve_index , delta)
-print("\n\n")
-for day in curr_month.days:
-    print(day)
 
 
-curr_month.days[5].income += 750.5
-delta = curr_month.days[5].update()
-preserve_index = 5
-curr_month.preserve_bal(preserve_index , delta)
-print("\n\n")
-for day in curr_month.days:
-    print(day)
+# curr_month.days[3].bills += 1000
+# delta = curr_month.days[3].update()
+# preserve_index = 3
+# curr_month.preserve_bal(preserve_index , delta)
+# print("\n\n")
+# for day in curr_month.days:
+#     print(day)
+
+# curr_month.days[5].income += 750.5
+# delta = curr_month.days[5].update()
+# preserve_index = 5
+# curr_month.preserve_bal(preserve_index , delta)
+# print("\n\n")
+# for day in curr_month.days:
+#     print(day)
 
 
 # # print("Day {}, no sign of covid ceasing".format(date.day_of_year))
-# print(date.time_delta.year)
+# print(date.date.year)
 #date.save('random.csv')
 #print(date.time_delta)
 
@@ -134,3 +130,21 @@ for day in curr_month.days:
 # curr_month.days.append(date_info(time_delta = -6))
 # for day in curr_month.days:
 #     print(day)
+
+
+"""
+
+print(calendar.month(year, month))
+print(calendar.weekday(year=year, month=month, day=day))
+days_in_the_year = (dt.date(year, month, day) - dt.date(year,1,1)).days + 1
+print("{1}/{2}/{0}".format(year, month, day))
+
+def __init__(self, year: int = dt.date.today().year, month: int =dt.date.today().month, day: int = dt.date.today().day, day_of_year: int = 0):
+        self.year = year
+        self.month = month
+        self.day = day
+        self.day_of_year = (dt.date(self.year, self.month, self.day) - dt.date(self.year,1,1)).days + 1
+        # init day then look for date in some state file maintaining stats
+        self.balance = 0.0
+
+"""
