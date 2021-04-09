@@ -8,7 +8,7 @@ def myconverter(o):
     if isinstance(o, datetime):
         return o.__str__()
 
-class date_info:
+class day_obj:
     def __init__(self, date = datetime.now(), balance: int = 0, loan: int = 0, income: int = 0, bills: int = 0, spending: int = 0, savings_goals: int = 0):
         self.date = date # maybe make this a datetime obj instead???
         self.loan = loan
@@ -36,7 +36,7 @@ class date_info:
         return "{0}/{1}/{2} - Balance: ${3}".format(self.date.month,self.date.day,self.date.year,self.balance)
 
 class Month:
-    def __init__(self, name: str = "", days: [date_info] = [], year: int = 2021):
+    def __init__(self, name: str = "", days: [day_obj] = [], year: int = 2021):
         self.name = name
         self.days = days
         self.year = year
@@ -63,7 +63,7 @@ class Month:
         except IndexError:
             print(f"Index {start_date} out of range {len(self.days)}")
 
-def build_month(month = datetime.now().month, year = datetime.now().year) -> [date_info]:
+def build_month(month = datetime.now().month, year = datetime.now().year) -> [day_obj]:
     dates = []
     now = datetime.now()
     if now.month > month and month > 0 and month <13:
@@ -73,7 +73,7 @@ def build_month(month = datetime.now().month, year = datetime.now().year) -> [da
         now = now.day
     for i in range(1,now+1):
         that_day = date(year, month, i)
-        dates.append(date_info(date=that_day))
+        dates.append(day_obj(date=that_day))
     return dates
 
 dates = build_month(month = 2, year=2020)
