@@ -33,7 +33,12 @@ class day_obj:
         return self.balance - delta
                
     def __repr__(self):
-        return "{0}/{1}/{2} - Balance: ${3}".format(self.date.month,self.date.day,self.date.year,self.balance)
+        """
+        really ugly but prints single day in the following format
+        # 4/7/2021        Balance: $1747.50
+        #                Spent: $0.00
+        """
+        return f"{self.date.month}/{self.date.day}/{self.date.year}  \tBalance: ${self.balance:.2f}\n\t\tSpent: ${self.spending:.2f}\n"
 
 class Month:
     def __init__(self, name: str = "", days: [day_obj] = [], year: int = 2021):
@@ -53,17 +58,18 @@ class Month:
         return self.days[0].date == other.days[0].date   
 
     def preserve_bal(self, start_date: int = 0, to_add: int = 0):
-        # Only useful on adjusting historic entries
-        # Example: If 3 days ago you remember you spent x dollars, you would need to update 
-        # the following days by deducting x amount from the following days balances
-
+        """
+        Only useful on adjusting historic entries
+        Example: If 3 days ago you remember you spent x dollars, you would need to update 
+        the following days by deducting x amount from the following days balances
+        """
         try:
             for day in self.days[start_date+1::]:
                 day.balance += to_add
         except IndexError:
             print(f"Index {start_date} out of range {len(self.days)}")
 
-def build_month(month = datetime.now().month, year = datetime.now().year) -> [day_obj]:
+def build_month(month = datetime.now().month, year = datetime.now().year) -> Month:
     dates = []
     now = datetime.now()
     if now.month > month and month > 0 and month <13:
@@ -74,77 +80,32 @@ def build_month(month = datetime.now().month, year = datetime.now().year) -> [da
     for i in range(1,now+1):
         that_day = date(year, month, i)
         dates.append(day_obj(date=that_day))
-    return dates
+    return Month(name = calendar.month_name[dates[0].date.month], days = dates, year = datetime.now().year)
 
-dates = build_month(month = 2, year=2020)
-curr_month = Month(name=calendar.month_name[3], days=dates, year = datetime.now().year)
+def main():
+    # should first see if the curr month file exists to load instead of making it from scratch each time
+    quit_loop = False
+    curr_month = build_month()
+    preserve_index = 0
+    curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
+    print(f'Snapshot of the last 3 days of {curr_month.name}.')
+    for day in curr_month.days[-3::]:
+        print(day)
 
-preserve_index = 0
-curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
-for day in curr_month.days:
-     print(day)
+    while not quit_loop:
+        month = input('What month would you like to view? Enter the month number (ex. Feb -> 2, April -> 4, Dec -> 12) ')
+        if month.isnumeric:
+            month = int(month)
+            if month > 0 and month < 13:
+                curr_month = build_month(month=month)
+                preserve_index = 0
+                curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
 
-
-
-# curr_month.days[3].bills += 1000
-# delta = curr_month.days[3].update()
-# preserve_index = 3
-# curr_month.preserve_bal(preserve_index , delta)
-# print("\n\n")
-# for day in curr_month.days:
-#     print(day)
-
-# curr_month.days[5].income += 750.5
-# delta = curr_month.days[5].update()
-# preserve_index = 5
-# curr_month.preserve_bal(preserve_index , delta)
-# print("\n\n")
-# for day in curr_month.days:
-#     print(day)
-
-
-# # print("Day {}, no sign of covid ceasing".format(date.day_of_year))
-# print(date.date.year)
-#date.save('random.csv')
-#print(date.time_delta)
-
-
-# dates1 = set()
-# while len(dates1) != 4:
-#     dates1.add(date_info(time_delta = random.randint(0,7)))
-
-# dates2 = set()
-# while len(dates2) != 4:
-#     dates2.add(date_info(time_delta = random.randint(30,37)))
-
-# month1 = Month(name="Fake Month", days=list(dates1))
-# month2 = Month(name="Fake Month", days=list(dates2))
-# month1.days.sort()
-# month2.days.sort()
-# #month.save("")
-# print(month1 > month2)
-
-# curr_month = Month(name=calendar.month_name[4], days=[], year = datetime.now().year)
-# print(curr_month.name, curr_month.year)
-# curr_month.days.append(date_info(time_delta = 7))
-# curr_month.days.append(date_info(time_delta = -6))
-# for day in curr_month.days:
-#     print(day)
-
-
-"""
-
-print(calendar.month(year, month))
-print(calendar.weekday(year=year, month=month, day=day))
-days_in_the_year = (dt.date(year, month, day) - dt.date(year,1,1)).days + 1
-print("{1}/{2}/{0}".format(year, month, day))
-
-def __init__(self, year: int = dt.date.today().year, month: int =dt.date.today().month, day: int = dt.date.today().day, day_of_year: int = 0):
-        self.year = year
-        self.month = month
-        self.day = day
-        self.day_of_year = (dt.date(self.year, self.month, self.day) - dt.date(self.year,1,1)).days + 1
-        # init day then look for date in some state file maintaining stats
-        self.balance = 0.0
-
-"""
+                print(f'Snapshot of the last 3 days of {curr_month.name}.')
+                for day in curr_month.days[-3::]:
+                    print(day)
+        quit_loop = input('Keep going? ')
+        quit_loop = True if quit_loop == "no" else False
+        
+if __name__ == '__main__':
+    main()
