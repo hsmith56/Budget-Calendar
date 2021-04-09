@@ -12,4 +12,4 @@ IE. \
 \
 1/1/2021 - balance 1000\
 1/2/2021 - balance 1200, income 200, delta = +200\
-1/3/2021 - balance = balance + delta\
+1/3/2021 - balance = balance + delta
