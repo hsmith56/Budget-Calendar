@@ -43,7 +43,9 @@ class date_info:
         return hash(self.time_delta)
 
     def update(self):
-        self.balance = self.balance + self.income - self.loan - self.spending - self.bills
+        delta = self.balance
+        self.balance += self.income - self.loan - self.spending - self.bills
+        return self.balance - delta
                
     def __repr__(self):
         return "{0}/{1}/{2} - Balance: ${3}".format(self.time_delta.month,self.time_delta.day,self.time_delta.year,self.balance)
@@ -66,19 +68,49 @@ class Month:
         return self.days[0].time_delta == other.days[0].time_delta   
 
     def preserve_bal(self, start_date: int = 0, to_add: int = 0):
-        bal_to_add = to_add
+        # Only useful on adjusting historic entries
+        # Example: If 3 days ago you remember you spent x dollars, you would need to update 
+        # the following days by deducting x amount from the following days balances
+
         try:
             for day in self.days[start_date+1::]:
-                day.balance += bal_to_add
+                day.balance += to_add
         except IndexError:
             print(f"Index {start_date} out of range {len(self.days)}")
+
+dates = []
+for i in range(datetime.now().day,0,-1):
+    dates.append(date_info(time_delta = i-1))
+
+curr_month = Month(name=calendar.month_name[4], days=dates, year = datetime.now().year)
+
+preserve_index = 0
+curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
+for day in curr_month.days:
+     print(day)
+
+curr_month.days[3].bills += 1000
+delta = curr_month.days[3].update()
+preserve_index = 3
+curr_month.preserve_bal(preserve_index , delta)
+print("\n\n")
+for day in curr_month.days:
+    print(day)
+
+
+curr_month.days[5].income += 750.5
+delta = curr_month.days[5].update()
+preserve_index = 5
+curr_month.preserve_bal(preserve_index , delta)
+print("\n\n")
+for day in curr_month.days:
+    print(day)
 
 
 # # print("Day {}, no sign of covid ceasing".format(date.day_of_year))
 # print(date.time_delta.year)
 #date.save('random.csv')
 #print(date.time_delta)
-
 
 
 # dates1 = set()
@@ -102,22 +134,3 @@ class Month:
 # curr_month.days.append(date_info(time_delta = -6))
 # for day in curr_month.days:
 #     print(day)
-
-dates = []
-for i in range(datetime.now().day,0,-1):
-    dates.append(date_info(time_delta = i-1))
-
-curr_month = Month(name=calendar.month_name[4], days=dates, year = datetime.now().year)
-
-
-preserve_index = 0
-curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
-for day in curr_month.days:
-     print(day)
-
-curr_month.days[0].income = 1000
-curr_month.days[0].update()
-curr_month.preserve_bal(3,-1000)
-print("\n\n")
-for day in curr_month.days:
-    print(day)
