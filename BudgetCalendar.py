@@ -1,8 +1,10 @@
 import calendar
 import os
 from datetime import datetime, timedelta, date
-import json
+import json, pickle
 import random
+
+cwd = os.getcwd()
 
 def myconverter(o):
     if isinstance(o, datetime):
@@ -32,6 +34,9 @@ class day_obj:
         delta = self.balance
         self.balance += self.income - self.loan - self.spending - self.bills
         return self.balance - delta
+    
+    def toJSON(self):
+        return json.dumps(self, default = lambda o: o.__dict__, sort_keys = True, indent = 4)
                
     def __repr__(self):
         """
@@ -93,7 +98,7 @@ def month_propegator(month) -> None:
     except IndexError:
         print('Everything is already up to date')
     except AttributeError:
-        print('Future dates are locked until I figure out how to handle them 😊')
+        print('Future dates are locked until I figure out how to handle them.')
 
 def snapshot(m):
     try:
@@ -103,7 +108,14 @@ def snapshot(m):
     except AttributeError:
         pass # Future dates are locked until I figure out how to handle them
     except IndexError:
-        print('Cannot print the snapshot as there have not been enough days in this month yet!')
+        print('Cannot print the snapshot as there have not been enough days in this month yet.')
+
+def save(m):
+    print(f'Saving {m.name} of {m.days[0].date.year} to file.')
+    save_dir = os.getcwd() + f"\\MonthObjects\\{m.name[0:3]}-{m.days[0].date.year}.pickle"
+    with open(save_dir, 'wb') as f:
+        pickle.dump(m, f)
+        
 
 def main():
     # should first see if the curr month file exists to load instead of making it from scratch each time
@@ -119,19 +131,28 @@ def main():
                 curr_month = build_month(month = month)
                 month_propegator(curr_month)
                 #snapshot(curr_month)
+                same_month = True
+                while same_month:
+                    if curr_month:
+                        date_to_edit = input(f'What day would you like to look at? [1-{len(curr_month.days)}] ')
+                        if date_to_edit.isnumeric:
+                            date_to_edit = int(date_to_edit)
+                            if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
+                                try:
+                                    print(f'\n{curr_month.days[date_to_edit-1]}')
+                                except AttributeError:
+                                    print('Future dates are locked until I figure out how to handle them. [curr_month.days[date_to_edit-1]]')
+                                    break
+                                except IndexError:
+                                    print('Cannot print this date as this day has not happened.')    
+                            else:
+                                print('That date is invalid, please try a different date.\n')
+                        same_month = False if 'n' in input('Stay on this month? (y/n) ') else True
+                    else: same_month = False
+
+                # Here is where I need to save the month
                 if curr_month:
-                    date_to_edit = input(f'What day would you like to look at? [1-{len(curr_month.days)}] ')
-                    if date_to_edit.isnumeric:
-                        date_to_edit = int(date_to_edit)
-                        if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
-                            try:
-                                print(f'\n{curr_month.days[date_to_edit-1]}')
-                            except AttributeError:
-                                print('Future dates are locked until I figure out how to handle them 😊1')
-                            except IndexError:
-                                print('Cannot print this date as this day has not happened!')    
-                        else:
-                            print('That date is invalid, please try a different date.\n')
+                    save(curr_month)
         quit_loop = input('Keep going? ')
         quit_loop = True if 'n'in quit_loop else False
         
