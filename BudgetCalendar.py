@@ -17,6 +17,7 @@ class day_obj:
         self.spending = spending
         self.savings_goals = savings_goals
         self.balance = balance + self.income - self.loan - self.spending - self.bills
+        self.delta = self.balance - balance
 
     def __lt__(self, other):
         return self.date < other.date
@@ -38,7 +39,7 @@ class day_obj:
         # 4/7/2021        Balance: $1747.50
         #                Spent: $0.00
         """
-        return f"{self.date.month}/{self.date.day}/{self.date.year}  \tBalance: ${self.balance:.2f}\n\t\tSpent: ${self.spending:.2f}\n"
+        return f"{self.date.month}/{self.date.day}/{self.date.year}  \tBalance: ${self.balance:.2f}\n\t\tSpent: ${self.spending:.2f}\n\t\tDelta: ${self.delta:.2f}\n"
 
 class Month:
     def __init__(self, name: str = "", days: [day_obj] = [], year: int = 2021):
@@ -71,41 +72,69 @@ class Month:
 
 def build_month(month = datetime.now().month, year = datetime.now().year) -> Month:
     dates = []
-    now = datetime.now()
-    if now.month > month and month > 0 and month <13:
-        if now.year >= year:
-            now = calendar.monthrange(year,month)[1]
+    total_Days_in_month = datetime.now()
+    if total_Days_in_month.month > month and month > 0 and month <13:
+        if total_Days_in_month.year >= year:
+            total_Days_in_month = calendar.monthrange(year,month)[1]
+    elif total_Days_in_month.month == month:
+        total_Days_in_month = total_Days_in_month.day
     else:
-        now = now.day
-    for i in range(1,now+1):
+        return 
+    for i in range(1,total_Days_in_month+1):
         that_day = date(year, month, i)
         dates.append(day_obj(date=that_day))
-    return Month(name = calendar.month_name[dates[0].date.month], days = dates, year = datetime.now().year)
+    return Month(name = calendar.month_name[dates[0].date.month], days = dates, year = year)
+
+def month_propegator(month) -> None:
+    try:
+        for index, day in enumerate(month.days):
+            if day.delta != 0:
+                month.preserve_bal(index ,day.delta)
+    except IndexError:
+        print('Everything is already up to date')
+    except AttributeError:
+        print('Future dates are locked until I figure out how to handle them 😊')
+
+def snapshot(m):
+    try:
+        print(f'Snapshot of the last 3 days of {m.name}.')
+        for day in m.days[-3::]:
+            print(day)
+    except AttributeError:
+        pass # Future dates are locked until I figure out how to handle them
+    except IndexError:
+        print('Cannot print the snapshot as there have not been enough days in this month yet!')
 
 def main():
     # should first see if the curr month file exists to load instead of making it from scratch each time
     quit_loop = False
     curr_month = build_month()
-    preserve_index = 0
-    curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
-    print(f'Snapshot of the last 3 days of {curr_month.name}.')
-    for day in curr_month.days[-3::]:
-        print(day)
-
+    month_propegator(curr_month)
+    #snapshot(curr_month)
     while not quit_loop:
         month = input('What month would you like to view? Enter the month number (ex. Feb -> 2, April -> 4, Dec -> 12) ')
         if month.isnumeric:
             month = int(month)
             if month > 0 and month < 13:
-                curr_month = build_month(month=month)
-                preserve_index = 0
-                curr_month.preserve_bal(preserve_index ,curr_month.days[preserve_index].balance)
-
-                print(f'Snapshot of the last 3 days of {curr_month.name}.')
-                for day in curr_month.days[-3::]:
-                    print(day)
+                curr_month = build_month(month = month)
+                month_propegator(curr_month)
+                #snapshot(curr_month)
+                if curr_month:
+                    date_to_edit = input(f'What day would you like to look at? [1-{len(curr_month.days)}] ')
+                    if date_to_edit.isnumeric:
+                        date_to_edit = int(date_to_edit)
+                        if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
+                            try:
+                                print(f'\n{curr_month.days[date_to_edit-1]}')
+                            except AttributeError:
+                                print('Future dates are locked until I figure out how to handle them 😊1')
+                            except IndexError:
+                                print('Cannot print this date as this day has not happened!')    
+                        else:
+                            print('That date is invalid, please try a different date.\n')
         quit_loop = input('Keep going? ')
-        quit_loop = True if quit_loop == "no" else False
+        quit_loop = True if 'n'in quit_loop else False
         
 if __name__ == '__main__':
     main()
+    # more efficient methods of propegating balance forward
