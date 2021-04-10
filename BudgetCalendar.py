@@ -1,7 +1,7 @@
 import calendar
 import os
 from datetime import datetime, timedelta, date
-import json, pickle
+import pickle
 import random
 
 cwd = os.getcwd()
@@ -31,12 +31,10 @@ class day_obj:
         return hash(self.date)
 
     def update(self):
-        delta = self.balance
+        starting_bal = self.balance
         self.balance += self.income - self.loan - self.spending - self.bills
-        return self.balance - delta
-    
-    def toJSON(self):
-        return json.dumps(self, default = lambda o: o.__dict__, sort_keys = True, indent = 4)
+        self.delta = self.balance - starting_bal
+        return self.delta
                
     def __repr__(self):
         """
@@ -51,11 +49,6 @@ class Month:
         self.name = name
         self.days = days
         self.year = year
-
-    def save(self, filepath):
-        for day in self.days:
-            jsonStr = json.dumps(day.__dict__, default = myconverter)
-            print(jsonStr)
 
     def __lt__(self, other):
         return self.days[0].date < other.days[0].date
@@ -115,14 +108,34 @@ def save(m):
     save_dir = os.getcwd() + f"\\MonthObjects\\{m.name[0:3]}-{m.days[0].date.year}.pickle"
     with open(save_dir, 'wb') as f:
         pickle.dump(m, f)
+        f.close()
         
+def retrieve_month():
+    """
+    this should be called before making a new month
+    First look for a month pickle, then try to load it, otherwise create a new month
+    """
+    pass
+
+def interact_with_single_day(date_to_edit, curr_month):
+    if date_to_edit.isnumeric:
+        date_to_edit = int(date_to_edit)
+        if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
+            try:
+                print(f'\n{curr_month.days[date_to_edit-1]}')
+            except AttributeError:
+                print('Future dates are locked until I figure out how to handle them. [curr_month.days[date_to_edit-1]]')
+            except IndexError:
+                print('Cannot print this date as this day has not happened.')    
+        else:
+            print('That date is invalid, please try a different date.\n')
 
 def main():
     # should first see if the curr month file exists to load instead of making it from scratch each time
     quit_loop = False
     curr_month = build_month()
     month_propegator(curr_month)
-    #snapshot(curr_month)
+
     while not quit_loop:
         month = input('What month would you like to view? Enter the month number (ex. Feb -> 2, April -> 4, Dec -> 12) ')
         if month.isnumeric:
@@ -130,32 +143,24 @@ def main():
             if month > 0 and month < 13:
                 curr_month = build_month(month = month)
                 month_propegator(curr_month)
-                #snapshot(curr_month)
                 same_month = True
                 while same_month:
                     if curr_month:
                         date_to_edit = input(f'What day would you like to look at? [1-{len(curr_month.days)}] ')
-                        if date_to_edit.isnumeric:
-                            date_to_edit = int(date_to_edit)
-                            if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
-                                try:
-                                    print(f'\n{curr_month.days[date_to_edit-1]}')
-                                except AttributeError:
-                                    print('Future dates are locked until I figure out how to handle them. [curr_month.days[date_to_edit-1]]')
-                                    break
-                                except IndexError:
-                                    print('Cannot print this date as this day has not happened.')    
-                            else:
-                                print('That date is invalid, please try a different date.\n')
+                        interact_with_single_day(date_to_edit, curr_month)
                         same_month = False if 'n' in input('Stay on this month? (y/n) ') else True
                     else: same_month = False
 
-                # Here is where I need to save the month
                 if curr_month:
                     save(curr_month)
+
         quit_loop = input('Keep going? ')
         quit_loop = True if 'n'in quit_loop else False
         
 if __name__ == '__main__':
     main()
     # more efficient methods of propegating balance forward
+    # find all days with deltas != 0, then combine
+    # time complexity?
+    # [x,0,0,0,y  ,0  ,0  ,z    ,    0,    0]
+    # [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]
