@@ -11,10 +11,12 @@ def myconverter(o):
         return o.__str__()
 
 class day_obj:
+    paycheck = 1750.5
+
     def __init__(self, date = datetime.now(), balance: int = 0, loan: int = 0, income: int = 0, bills: int = 0, spending: int = 0, savings_goals: int = 0):
-        self.date = date # maybe make this a datetime obj instead???
+        self.date = date
         self.loan = loan
-        self.income = 1747.50 if self.date.day == 1 or self.date.day == 15 else income
+        self.income = self.paycheck if self.date.day == 1 or self.date.day == 15 else income
         self.bills = bills
         self.spending = spending
         self.savings_goals = savings_goals
@@ -40,7 +42,8 @@ class day_obj:
         """
         really ugly but prints single day in the following format
         # 4/7/2021        Balance: $1747.50
-        #                Spent: $0.00
+        #                 Spent: $0.00
+        #                 Delta: $0.00
         """
         return f"{self.date.month}/{self.date.day}/{self.date.year}  \tBalance: ${self.balance:.2f}\n\t\tSpent: ${self.spending:.2f}\n\t\tDelta: ${self.delta:.2f}\n"
 
