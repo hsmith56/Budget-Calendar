@@ -10,17 +10,28 @@ def myconverter(o):
     if isinstance(o, datetime):
         return o.__str__()
 
+class savings_goal():
+    def __init__(self, name: str = "", start= datetime.now(), end= datetime.now()+ timedelta(days=1),balance: int = 0, goal: int = 100):
+        self.name = name
+        self.start = start.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%b %d, %Y')
+        self.end = end.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%b %d, %Y')
+        self.balance = balance
+        self.goal = goal
+
+    def __repr__(self):
+        return f'Your "{self.name}" goal from {self.start} -> {self.end} is {(self.balance/self.goal)*100:.2f}% complete'
+
 class day_obj:
     paycheck = 1750.5
-
     def __init__(self, date = datetime.now(), balance: int = 0, loan: int = 0, income: int = 0, bills: int = 0, spending: int = 0, savings_goals: int = 0):
         self.date = date
         self.loan = loan
         self.income = self.paycheck if self.date.day == 1 or self.date.day == 15 else income
+        # might be changed later depending on how I want to handle this. Currently is very rigid, does not allow for any flexibility
         self.bills = bills
         self.spending = spending
         self.savings_goals = savings_goals
-        self.balance = balance + self.income - self.loan - self.spending - self.bills
+        self.balance = balance + self.income - self.loan - self.spending - self.bills - self.savings_goals
         self.delta = self.balance - balance
 
     def __lt__(self, other):
@@ -30,11 +41,11 @@ class day_obj:
         return self.date == other.date
 
     def __hash__(self):
-        return hash(self.date)
+        return hash(self.date) 
 
     def update(self):
         starting_bal = self.balance
-        self.balance += self.income - self.loan - self.spending - self.bills
+        self.balance += self.income - self.loan - self.spending - self.bills - self.savings_goals
         self.delta = self.balance - starting_bal
         return self.delta
                
@@ -63,7 +74,7 @@ class Month:
         """
         Only useful on adjusting historic entries
         Example: If 3 days ago you remember you spent x dollars, you would need to update 
-        the following days by deducting x amount from the following days balances
+        the following days by adjusting +- x amount from the following days balances
         """
         try:
             for day in self.days[start_date+1::]:
@@ -161,9 +172,11 @@ def main():
         quit_loop = True if 'n'in quit_loop else False
         
 if __name__ == '__main__':
-    main()
+    #main()
     # more efficient methods of propegating balance forward
     # find all days with deltas != 0, then combine
     # time complexity?
     # [x,0,0,0,y  ,0  ,0  ,z    ,    0,    0]
     # [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]
+    tt = savings_goal(name="hi")
+    print(tt)
