@@ -8,11 +8,11 @@
 	- [ ] Savings goals should be persistent across months from start date to finish date
 	- [ ] Savings goals should be customizable with start/end date, name, auto deposit on specific day
 - [ ] Modify handling of paychecks (Do I set paycheck balance at first of month or as I get them?)  
-- [ ] more efficient methods of propegating balance forward
-      find all days with deltas != 0, then combine
-      time complexity?
-      [x,0,0,0,y  ,0  ,0  ,z    ,    0,    0]
-      [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]
+- [ ] more efficient methods of propegating balance forward\
+      find all days with deltas != 0, then combine\
+      time complexity?\
+      [x,0,0,0,y  ,0  ,0  ,z    ,    0,    0]\
+      [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]\
 
 Whenever I have any change to a specific balance, it should go through all days after it in the same month and deduct the delta from before the change and after the change from the running balance.
 
