@@ -120,29 +120,32 @@ def snapshot(m):
         print('Cannot print the snapshot as there have not been enough days in this month yet.')
 
 def save(m):
-    print(f'Saving {m.name} of {m.days[0].date.year} to file.')
-    save_dir = os.getcwd() + f"\\MonthObjects\\{m.name[0:3]}-{m.days[0].date.year}.pickle"
-    with open(save_dir, 'wb') as f:
-        pickle.dump(m, f)
-        f.close()
+    try:
+        save_dir = os.getcwd() + f"\\MonthObjects\\{m.name[0:3]}-{m.days[0].date.year}.pickle"
+        with open(save_dir, 'wb') as f:
+            pickle.dump(m, f)
+            print(f'Saving {m.name} of {m.days[0].date.year} to file.')
+            f.close()
+    except FileNotFoundError:
+        os.mkdir('MonthObjects')
+        save(m)
         
-def retrieve_month(m):
+def load(m):
     """
     this should be called before making a new month
     First look for a month pickle, then try to load it, otherwise create a new month
     """
     try:
-        search_dir = os.getcwd() + f"\\MonthObjects\\{m.name[0:3]}-{m.days[0].date.year}.pickle"
-        with open(search_dir, 'wb') as f:
-            month = pickle.load(m, f)
+        search_dir = os.getcwd() + f"\\MonthObjects\\{calendar.month_name[m.month][0:3]}-{m.year}.pickle"
+        with open(search_dir, 'rb') as f:
+            month = pickle.load(f)
             f.close()
             return month
-    except:
-        pass
-    pass
+    except FileNotFoundError:
+        print(f"failed to open '\\MonthObjects\\{calendar.month_name[m.month][0:3]}-{m.year}.pickle'. This month does not exist yet")
 
 def interact_with_single_day(date_to_edit, curr_month):
-    if date_to_edit.isnumeric:
+    if date_to_edit.isnumeric():
         date_to_edit = int(date_to_edit)
         if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
             try:
@@ -162,7 +165,7 @@ def main():
 
     while not quit_loop:
         month = input('What month would you like to view? Enter the month number (ex. Feb -> 2, April -> 4, Dec -> 12) ')
-        if month.isnumeric:
+        if month.isnumeric():
             month = int(month)
             if month > 0 and month < 13:
                 curr_month = build_month(month = month)
@@ -174,11 +177,13 @@ def main():
                         interact_with_single_day(date_to_edit, curr_month)
                         same_month = False if 'n' in input('Stay on this month? (y/n) ') else True
                     else: same_month = False
-
+            
                 if curr_month:
                     save(curr_month)
-
-        quit_loop = input('Keep going? ')
+            else: print('Please pick a valid month.\n')
+        else:
+            print(f"'{month}' is not a valid number 1-12. Please try again.")
+        quit_loop = input('Continue? (y/n) ')
         quit_loop = True if 'n'in quit_loop else False
         
 if __name__ == '__main__':
@@ -188,7 +193,6 @@ if __name__ == '__main__':
 
         import pstats
         from pstats import SortKey
-        
         with open('output_time.txt','w') as f:
             p = pstats.Stats('output.dat', stream=f)
             p.sort_stats("time").print_stats()
@@ -199,5 +203,9 @@ if __name__ == '__main__':
 
     else:
         main()
-        tt = savings_goal(name="hi")
-        print(tt)
+        # tt = savings_goal(name="hi")
+        # print(tt)
+        # date = date(year=2021, month=1,day=1)
+        # pickled_month = load(date)
+        # snapshot(pickled_month)
+        
