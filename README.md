@@ -26,3 +26,7 @@ IE. \
 1/3/2021 - balance = balance + delta 
 
 ####  Random.csv will eventually be replaced with a dir of month json objects to avoid loading the entirety of every month into memory. Will look at how costly that would be, would not assume too much but python is already heavy so if I can put lighten some of the burden then why not.
+
+more efficient methods of propegating balance forward
+find all days with deltas != 0, then combine
+time complexity?

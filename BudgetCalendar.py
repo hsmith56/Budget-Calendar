@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, date
 import pickle
 import random
 
+PROFILE = False
+
 cwd = os.getcwd()
 
 def myconverter(o):
@@ -18,7 +20,7 @@ class savings_goal():
         self.balance = balance
         self.goal = goal
 
-    def __repr__(self):
+    def __str__(self):
         return f'Your "{self.name}" goal from {self.start} -> {self.end} is {(self.balance/self.goal)*100:.2f}% complete'
 
 class day_obj:
@@ -49,7 +51,7 @@ class day_obj:
         self.delta = self.balance - starting_bal
         return self.delta
                
-    def __repr__(self):
+    def __str__(self):
         """
         really ugly but prints single day in the following format
         # 4/7/2021        Balance: $1747.50
@@ -124,11 +126,19 @@ def save(m):
         pickle.dump(m, f)
         f.close()
         
-def retrieve_month():
+def retrieve_month(m):
     """
     this should be called before making a new month
     First look for a month pickle, then try to load it, otherwise create a new month
     """
+    try:
+        search_dir = os.getcwd() + f"\\MonthObjects\\{m.name[0:3]}-{m.days[0].date.year}.pickle"
+        with open(search_dir, 'wb') as f:
+            month = pickle.load(m, f)
+            f.close()
+            return month
+    except:
+        pass
     pass
 
 def interact_with_single_day(date_to_edit, curr_month):
@@ -172,11 +182,22 @@ def main():
         quit_loop = True if 'n'in quit_loop else False
         
 if __name__ == '__main__':
-    #main()
-    # more efficient methods of propegating balance forward
-    # find all days with deltas != 0, then combine
-    # time complexity?
-    # [x,0,0,0,y  ,0  ,0  ,z    ,    0,    0]
-    # [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]
-    tt = savings_goal(name="hi")
-    print(tt)
+    if PROFILE:
+        import cProfile
+        cProfile.run('main()', 'output.dat')
+
+        import pstats
+        from pstats import SortKey
+        
+        with open('output_time.txt','w') as f:
+            p = pstats.Stats('output.dat', stream=f)
+            p.sort_stats("time").print_stats()
+
+        with open('output_calls.txt','w') as f:
+            p = pstats.Stats('output.dat', stream=f)
+            p.sort_stats("calls").print_stats()
+
+    else:
+        main()
+        tt = savings_goal(name="hi")
+        print(tt)
