@@ -2,6 +2,10 @@
 #  Budget-Calendar  
 
 ##  TODO
+### Need to clarify what daily spending is tracking.
+- Is it tracking total spent on that day?
+- Is it tracking misc spending?
+- Is it tracking some categories but not all?
 
 - [ ] Need a good way to carry over balance from 1st of month to last of month
 - [ ] Move Savings goals into seperate class
@@ -12,7 +16,7 @@
       find all days with deltas != 0, then combine\
       time complexity?\
       [x,0,0,0,y  ,0  ,0  ,z    ,    0,    0]\
-      [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]\
+      [x,x,x,x,y+x,y+x,y+x,z+y+x,z+y+x,z+y+x]
 
 Whenever I have any change to a specific balance, it should go through all days after it in the same month and deduct the delta from before the change and after the change from the running balance.
 
