@@ -12,8 +12,13 @@ def myconverter(o):
     if isinstance(o, datetime):
         return o.__str__()
 
+class spending():
+    def __init__(self, name: str = "", amount: float = 0.0):
+        self.name = name
+        self.amount = amount
+
 class savings_goal():
-    def __init__(self, name: str = "", start= datetime.now(), end= datetime.now()+ timedelta(days=1),balance: int = 0, goal: int = 100):
+    def __init__(self, name: str = "", start= datetime.now(), end= datetime.now()+ timedelta(days=1),balance: float = 0, goal: int = 100):
         self.name = name
         self.start = start.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%b %d, %Y')
         self.end = end.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%b %d, %Y')
@@ -25,7 +30,7 @@ class savings_goal():
 
 class day_obj:
     paycheck = 1750.5
-    def __init__(self, date = datetime.now(), balance: int = 0, loan: int = 0, income: int = 0, bills: int = 0, spending: int = 0, savings_goals: int = 0):
+    def __init__(self, date = datetime.now(), balance: float = 0.0, loan: float = 0.0, income: float = 0.0, bills: float = 0.0, spending: float = 0.0, savings_goals: float = 0.0):
         self.date = date
         self.loan = loan
         self.income = self.paycheck if self.date.day == 1 or self.date.day == 15 else income
@@ -50,6 +55,7 @@ class day_obj:
         starting_bal = self.balance
         self.balance += self.income - self.loan - self.spending - self.bills - self.savings_goals
         self.delta = self.balance - starting_bal
+        print(f'{starting_bal}...{self.balance}={self.income}-{self.loan}-{self.spending}-{self.bills}-{self.savings_goals}')
         return self.delta
                
     def __str__(self):
@@ -119,6 +125,7 @@ def month_propegator(month) -> None:
         for index, day in enumerate(month.days):
             if day.delta != 0:
                 month.preserve_bal(index ,day.delta)
+                day.update()
     except IndexError:
         print('Everything is already up to date')
     except AttributeError:
@@ -176,27 +183,32 @@ def interact_with_single_day(date_to_edit, curr_month):
             print('That date is invalid, please try a different date.\n')
 
 def main():
-    # should first see if the curr month file exists to load instead of making it from scratch each time
     quit_loop = False
-    curr_month = build_month()
-    month_propegator(curr_month)
+    # should first see if the curr month file exists to load instead of making it from scratch each time
+    # curr_month = build_month()
+    # month_propegator(curr_month)
 
     while not quit_loop:
         month = input('What month would you like to view? Enter the month number (ex. Feb -> 2, April -> 4, Dec -> 12) ')
         if month.isnumeric():
             month = int(month)
             if month > 0 and month < 13:
-                curr_month = build_month(month = month)
-                month_propegator(curr_month)
+                dat = date(year=2021, month=month,day=1)
+                curr_month: Month = load(dat)
+                
+                if not curr_month:
+                    curr_month = build_month(month=month)
+                    month_propegator(curr_month)
                 same_month = True
-                while same_month:
+
+                while same_month: # keep looking at different dates in the same month to avoid constant read/writes
                     if curr_month:
                         date_to_edit = input(f'What day would you like to look at? [1-{len(curr_month.days)}] ')
                         interact_with_single_day(date_to_edit, curr_month)
                         same_month = False if 'n' in input('Stay on this month? (y/n) ') else True
                     else: same_month = False
             
-                if curr_month:
+                if curr_month: # if the month object exists, then save it to file
                     save(curr_month)
             else: print('Please pick a valid month.\n')
         else:
@@ -220,9 +232,10 @@ if __name__ == '__main__':
             p.sort_stats("calls").print_stats()
 
     else:
-        # main()
+        #main()
         #tt = savings_goal(name="hi")
         #print(tt)
+
         date = date(year=2021, month=1,day=1)
         pickled_month: Month = load(date)
         print(pickled_month.days[2])
@@ -230,12 +243,14 @@ if __name__ == '__main__':
             day_to_edit: day_obj = pickled_month.days[x]
             day_to_edit.loan = random.randint(50,60)
             day_to_edit.savings_goals = random.randrange(15, 25)
+            day_to_edit.income = random.randrange(78, 335)
             day_to_edit.spending = random.randint(200,400)*.33
-            #print(f'loan: {day_to_edit.loan}, savings: {day_to_edit.savings_goals}, spending: {day_to_edit.spending}')
+            #print(f'loan: {day_to_edit.loan}, savings: {day_to_edit.savings_goals}, spending: {day_to_edit.spending}, income: {day_to_edit.income}')
             day_to_edit.update()
             pickled_month.preserve_bal(x, day_to_edit.delta)
             print(day_to_edit)
         stats = pickled_month.month_stats()
+        save(pickled_month)
 
         print(stats)
         
