@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 random_snippets.py
+MonthObjects/*
+!MonthObjects/
