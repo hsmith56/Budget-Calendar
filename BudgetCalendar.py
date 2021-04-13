@@ -5,12 +5,7 @@ import pickle
 import random
 
 PROFILE = False
-
 cwd = os.getcwd()
-
-def myconverter(o):
-    if isinstance(o, datetime):
-        return o.__str__()
 
 class spending():
     def __init__(self, name: str = "", amount: float = 0.0):
@@ -55,7 +50,7 @@ class day_obj:
         starting_bal = self.balance
         self.balance += self.income - self.loan - self.spending - self.bills - self.savings_goals
         self.delta = self.balance - starting_bal
-        print(f'{self.balance:.2f} = {starting_bal:.2f} + {self.income:.2f} - {self.loan:.2f} - {self.spending:.2f} - {self.bills:.2f} - {self.savings_goals:.2f}')
+        #print(f'{self.balance:.2f} = {starting_bal:.2f} + {self.income:.2f} - {self.loan:.2f} - {self.spending:.2f} - {self.bills:.2f} - {self.savings_goals:.2f}')
         return self.delta
                
     def __str__(self):
@@ -82,31 +77,42 @@ class Month:
 
     def preserve_bal(self, start_date: int = 0, to_add: int = 0):
         """
-        Only useful on adjusting historic entries
+        start_date = index to update from
+        to_add = amount to add to the following dates
         Example: If 3 days ago you remember you spent x dollars, you would need to update 
         the following days by adjusting +- x amount from the following days balances
         """
+
         try:
             for day in self.days[start_date+1::]:
                 day.balance += to_add
                 #print(f'adding {to_add} to {day.date.month}/{day.date.day}\nNew Balance: {day.balance}\n')
+                #day.update()
         except IndexError:
             print(f"Index {start_date} out of range {len(self.days)}")
     
     def month_stats(self, *start_date, **end_date):
         # TODO: Add in the ability to do a range of days. Snapshot of the 1st through the 7th
+        """
+        Prints the months stats in a dictionary
+        """
         tot_spent = sum([x.spending for x in self.days])
         tot_saved = sum([x.delta for x in self.days])
         tot_goals = sum([x.savings_goals for x in self.days])
         tot_loans = sum([x.loan for x in self.days])
 
         self.stats['total_spent'] = f'{tot_spent:.2f}'
-        self.stats['total_savings_goals'] = tot_goals
-        self.stats['total_loans'] = tot_loans
-        self.stats['total_saved'] = tot_saved
+        self.stats['total_savings_goals'] = f'{tot_goals:.2f}'
+        self.stats['total_loans'] = f'{tot_loans:.2f}'
+        self.stats['total_saved'] = f'{tot_saved:.2f}'
         return self.stats
 
 def build_month(month = datetime.now().month, year = datetime.now().year) -> Month:
+    """
+    Takes in a month int [1-12] and a year int to create that specific month
+    The returned month will have the Month name set, an array of all of the days that have happened up to the current day
+    Each day will be a default day sequentually added to the month object.
+    """
     dates = []
     total_Days_in_month = datetime.now()
     if total_Days_in_month.month > month and month > 0 and month <13:
@@ -122,11 +128,15 @@ def build_month(month = datetime.now().month, year = datetime.now().year) -> Mon
     return Month(name = calendar.month_name[dates[0].date.month], days = dates, year = year)
 
 def month_propegator(month) -> None:
+    """
+    Helper function to preserve_bal. Not sure if I will keep this as it does the same thing as preserve_bal
+    Determine if this needs to be kept.
+    """
+
     try:
         for index, day in enumerate(month.days):
             if day.delta != 0:
                 month.preserve_bal(index ,day.delta)
-                day.update()
     except IndexError:
         print('Everything is already up to date')
     except AttributeError:
@@ -157,9 +167,11 @@ def save(m):
         
 def load(m) -> Month:
     """
-    this should be called before making a new month
+    [1] input var: 'm' -> datetime object
+    This is called before creating a new month, tries to load a month object. 
     First look for a month pickle, then try to load it, otherwise create a new month
     """
+
     try:
         search_dir = os.getcwd() + f"\\MonthObjects\\{calendar.month_name[m.month][0:3]}-{m.year}.pickle"
         with open(search_dir, 'rb') as f:
@@ -194,14 +206,14 @@ def main():
         if month.isnumeric():
             month = int(month)
             if month > 0 and month < 13:
-                dat = date(year=2021, month=month,day=1)
-                curr_month: Month = load(dat)
+                same_month = True
+                date_to_load = date(year=2021, month=month,day=1)
+                curr_month: Month = load(date_to_load)
                 
                 if not curr_month:
                     curr_month = build_month(month=month)
                     month_propegator(curr_month)
-                same_month = True
-
+                
                 while same_month: # keep looking at different dates in the same month to avoid constant read/writes
                     if curr_month:
                         date_to_edit = input(f'What day would you like to look at? [1-{len(curr_month.days)}] ')
@@ -224,15 +236,15 @@ def testin():
     dat = date(year=2021, month=1,day=1)
     pickled_month: Month = load(dat)
     print(pickled_month.days[2])
-
     # THIS REALLY BREAKS ALL LOGIC BUT IS CORRECT
     # BECAUSE YOU ARE DOING EVERY DAY, THE VALUES ARE DOUBLED
     # FROM SUBTRACTING THE PREV VALUE AND THE CURRENT DAYS VALUE
     # THIS WOULDN'T NORMALLY HAPPEN BUT DO NOT DO!
+    # LOOK AT MONTH STATS TO CONFIRM
     
     for x in range(2,5):
         day_to_edit: day_obj = pickled_month.days[x]
-        day_to_edit.loan = 0.135
+        day_to_edit.loan = 0.15
         day_to_edit.savings_goals = 0 # random.randrange(15, 25)
         day_to_edit.income = 0 # random.randrange(78, 335)
         day_to_edit.spending = 0 # random.randint(200,400)*.33
