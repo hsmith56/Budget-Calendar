@@ -55,7 +55,7 @@ class day_obj:
         starting_bal = self.balance
         self.balance += self.income - self.loan - self.spending - self.bills - self.savings_goals
         self.delta = self.balance - starting_bal
-        print(f'{starting_bal}...{self.balance}={self.income}-{self.loan}-{self.spending}-{self.bills}-{self.savings_goals}')
+        print(f'{self.balance:.2f} = {starting_bal:.2f} + {self.income:.2f} - {self.loan:.2f} - {self.spending:.2f} - {self.bills:.2f} - {self.savings_goals:.2f}')
         return self.delta
                
     def __str__(self):
@@ -89,6 +89,7 @@ class Month:
         try:
             for day in self.days[start_date+1::]:
                 day.balance += to_add
+                #print(f'adding {to_add} to {day.date.month}/{day.date.day}\nNew Balance: {day.balance}\n')
         except IndexError:
             print(f"Index {start_date} out of range {len(self.days)}")
     
@@ -99,7 +100,7 @@ class Month:
         tot_goals = sum([x.savings_goals for x in self.days])
         tot_loans = sum([x.loan for x in self.days])
 
-        self.stats['total_spent'] = tot_spent
+        self.stats['total_spent'] = f'{tot_spent:.2f}'
         self.stats['total_savings_goals'] = tot_goals
         self.stats['total_loans'] = tot_loans
         self.stats['total_saved'] = tot_saved
@@ -215,7 +216,36 @@ def main():
             print(f"'{month}' is not a valid number 1-12. Please try again.")
         quit_loop = input('Continue? (y/n) ')
         quit_loop = True if 'n'in quit_loop else False
+
+def testin():
+    #tt = savings_goal(name="hi")
+    #print(tt)
+
+    dat = date(year=2021, month=1,day=1)
+    pickled_month: Month = load(dat)
+    print(pickled_month.days[2])
+
+    # THIS REALLY BREAKS ALL LOGIC BUT IS CORRECT
+    # BECAUSE YOU ARE DOING EVERY DAY, THE VALUES ARE DOUBLED
+    # FROM SUBTRACTING THE PREV VALUE AND THE CURRENT DAYS VALUE
+    # THIS WOULDN'T NORMALLY HAPPEN BUT DO NOT DO!
+    
+    for x in range(2,5):
+        day_to_edit: day_obj = pickled_month.days[x]
+        day_to_edit.loan = 0.135
+        day_to_edit.savings_goals = 0 # random.randrange(15, 25)
+        day_to_edit.income = 0 # random.randrange(78, 335)
+        day_to_edit.spending = 0 # random.randint(200,400)*.33
+        #print(f'loan: {day_to_edit.loan}, savings: {day_to_edit.savings_goals}, spending: {day_to_edit.spending}, income: {day_to_edit.income}')
+        day_to_edit.update()
+        pickled_month.preserve_bal(x, day_to_edit.delta)
         
+        print(day_to_edit)
+    stats = pickled_month.month_stats()
+    save(pickled_month)
+
+    print(stats)  
+
 if __name__ == '__main__':
     if PROFILE:
         import cProfile
@@ -233,24 +263,7 @@ if __name__ == '__main__':
 
     else:
         #main()
-        #tt = savings_goal(name="hi")
-        #print(tt)
-
-        date = date(year=2021, month=1,day=1)
-        pickled_month: Month = load(date)
-        print(pickled_month.days[2])
-        for x in range(3,10):
-            day_to_edit: day_obj = pickled_month.days[x]
-            day_to_edit.loan = random.randint(50,60)
-            day_to_edit.savings_goals = random.randrange(15, 25)
-            day_to_edit.income = random.randrange(78, 335)
-            day_to_edit.spending = random.randint(200,400)*.33
-            #print(f'loan: {day_to_edit.loan}, savings: {day_to_edit.savings_goals}, spending: {day_to_edit.spending}, income: {day_to_edit.income}')
-            day_to_edit.update()
-            pickled_month.preserve_bal(x, day_to_edit.delta)
-            print(day_to_edit)
-        stats = pickled_month.month_stats()
-        save(pickled_month)
-
-        print(stats)
+        testin()
+        
+        
         

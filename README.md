@@ -7,6 +7,7 @@
 - Is it tracking misc spending?
 - Is it tracking some categories but not all?
 
+- [x] Confirm that correct values are propegated through month
 - [ ] Need a good way to carry over balance from 1st of month to last of month
 - [ ] Move Savings goals into seperate class
 	- [ ] Savings goals should be persistent across months from start date to finish date
