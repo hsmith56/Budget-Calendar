@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, date
 import pickle
 import random
 
-PROFILE = False
 cwd = os.getcwd()
 
 class spending():
@@ -52,6 +51,9 @@ class day_obj:
         self.delta = self.balance - starting_bal
         #print(f'{self.balance:.2f} = {starting_bal:.2f} + {self.income:.2f} - {self.loan:.2f} - {self.spending:.2f} - {self.bills:.2f} - {self.savings_goals:.2f}')
         return self.delta
+    
+    def __getattr__(self, item):
+        return self.__dict__[item]
                
     def __str__(self):
         """
@@ -106,6 +108,37 @@ class Month:
         self.stats['total_loans'] = f'{tot_loans:.2f}'
         self.stats['total_saved'] = f'{tot_saved:.2f}'
         return self.stats
+
+def interact_with_single_day(date_to_edit, curr_month):
+    if date_to_edit.isnumeric():
+        date_to_edit = int(date_to_edit)
+        if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
+            try:
+                print(f'\n{curr_month.days[date_to_edit-1]}')
+                day = curr_month.days[date_to_edit-1]
+                menu_choice = input(f'1. Loan\n2. Savings goals\n3. Income\n4. Spending\n')
+                if menu_choice.isnumeric() and int(menu_choice) > 0 and int(menu_choice) < 5:
+                    choice = int(menu_choice)
+                    # look at random_snippets for implementation of this
+                    
+                    if choice == 1:
+                        day.loan = 0
+                    elif choice ==2:
+                        day.savings_goals = 0
+                    elif choice == 3:
+                        day.income = 0 
+                    else:
+                        day.spending = 0
+
+                    day.update()
+                    curr_month.preserve_bal(date_to_edit, day.delta)
+
+            except AttributeError:
+                print('Future dates are locked until I figure out how to handle them. [curr_month.days[date_to_edit-1]]')
+            except IndexError:
+                print('Cannot print this date as this day has not happened.')   
+        else:
+            print('That date is invalid, please try a different date.\n')
 
 def build_month(month = datetime.now().month, year = datetime.now().year) -> Month:
     """
@@ -182,24 +215,8 @@ def load(m) -> Month:
         print(f"failed to open '\\MonthObjects\\{calendar.month_name[m.month][0:3]}-{m.year}.pickle'. This file does not exist.")
     return None
 
-def interact_with_single_day(date_to_edit, curr_month):
-    if date_to_edit.isnumeric():
-        date_to_edit = int(date_to_edit)
-        if date_to_edit >= 1 and date_to_edit <= len(curr_month.days):
-            try:
-                print(f'\n{curr_month.days[date_to_edit-1]}')
-            except AttributeError:
-                print('Future dates are locked until I figure out how to handle them. [curr_month.days[date_to_edit-1]]')
-            except IndexError:
-                print('Cannot print this date as this day has not happened.')    
-        else:
-            print('That date is invalid, please try a different date.\n')
-
 def main():
     quit_loop = False
-    # should first see if the curr month file exists to load instead of making it from scratch each time
-    # curr_month = build_month()
-    # month_propegator(curr_month)
 
     while not quit_loop:
         month = input('What month would you like to view? Enter the month number (ex. Feb -> 2, April -> 4, Dec -> 12) ')
@@ -259,6 +276,8 @@ def testin():
     print(stats)  
 
 if __name__ == '__main__':
+    PROFILE = False
+
     if PROFILE:
         import cProfile
         cProfile.run('main()', 'output.dat')
@@ -274,8 +293,5 @@ if __name__ == '__main__':
             p.sort_stats("calls").print_stats()
 
     else:
-        #main()
-        testin()
-        
-        
-        
+        main()
+        #testin()
