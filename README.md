@@ -17,4 +17,8 @@
 - [ ] Better input handler/input handler function\
       
 
+<<<<<<< HEAD
 ####  Random.csv will eventually be replaced with a dir of month json objects to avoid loading the entirety of every month into memory. Will look at how costly that would be, would not assume too much but python is already heavy so if I can put lighten some of the burden then why not.
+=======
+####  Random.csv will eventually be replaced with a dir of month json objects to avoid loading the entirety of every month into memory. Will look at how costly that would be, would not assume too much but python is already heavy so if I can put lighten some of the burden then why not.
+>>>>>>> 19e28ba97a2f29595308f0e625954e59ed86d321
