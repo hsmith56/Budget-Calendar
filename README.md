@@ -14,11 +14,4 @@
 	- [ ] Savings goals should be persistent across months from start date to finish date
 	- [ ] Savings goals should be customizable with start/end date, name, auto deposit on specific day
 - [ ] Modify handling of paychecks (Do I set paycheck balance at first of month or as I get them?)
-- [ ] Better input handler/input handler function\
-      
-
-<<<<<<< HEAD
-####  Random.csv will eventually be replaced with a dir of month json objects to avoid loading the entirety of every month into memory. Will look at how costly that would be, would not assume too much but python is already heavy so if I can put lighten some of the burden then why not.
-=======
-####  Random.csv will eventually be replaced with a dir of month json objects to avoid loading the entirety of every month into memory. Will look at how costly that would be, would not assume too much but python is already heavy so if I can put lighten some of the burden then why not.
->>>>>>> 19e28ba97a2f29595308f0e625954e59ed86d321
+- [ ] Better input handler/input handler function\    
