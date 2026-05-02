@@ -1,0 +1,22 @@
+MAIN ACCOUNT
+Chase Checking    5000.00    5/2
+
+PAYOUT ACCOUNTS
+Vio Savings    12000.00    5/2
+Brokerage    3500.00    5/2
+
+PAYMENTS
+Credit Card    -850.00    5/26
+Bonus Payment    500.00    5/5
+
+RECURRING BILLS
+Student Loan    -149.50    21st every month
+Cleaning    -110.00    Biweekly mondays
+Rent payment    -2000.00    1st every month
+
+RECURRING INCOME
+Payroll A    1488.20    first and 15
+Payroll B    3380.00    10th and 25th
+
+RECURRING TRANSFERS    FROM    TO
+Chase Checking to Vio Savings    2100.00    5th every month    Chase Checking    Vio Savings    Monthly savings transfer

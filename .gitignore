@@ -131,3 +131,4 @@ dmypy.json
 random_snippets.py
 MonthObjects/*
 !MonthObjects/
+.budget_calendar/
