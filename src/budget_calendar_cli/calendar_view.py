@@ -18,6 +18,8 @@ ACCOUNT_TYPE_META = {
     "savings": {"icon": "💰", "class_name": "savings"},
     "brokerage": {"icon": "📈", "class_name": "brokerage"},
     "credit": {"icon": "💳", "class_name": "credit"},
+    "loan": {"icon": "🏦", "class_name": "credit"},
+    "mortgage": {"icon": "🏠", "class_name": "credit"},
     "cash": {"icon": "💵", "class_name": "cash"},
     "other": {"icon": "📁", "class_name": "other"},
 }
@@ -32,6 +34,9 @@ class DaySummary:
     account_balances: list[tuple[str, str, float | None]] = field(default_factory=list)
     interest_earned_today: list[tuple[str, str, float]] = field(default_factory=list)
     interest_earned_month: list[tuple[str, str, float]] = field(default_factory=list)
+    total_assets: float | None = None
+    total_liabilities: float | None = None
+    net_worth: float | None = None
 
 
 @dataclass
@@ -48,6 +53,10 @@ class MonthSimulation:
     maximum_main_balance: float | None = None
     monthly_interest_totals: list[tuple[str, str, float]] = field(default_factory=list)
     total_monthly_interest: float = 0.0
+    opening_net_worth: float | None = None
+    closing_net_worth: float | None = None
+    minimum_net_worth: float | None = None
+    maximum_net_worth: float | None = None
 
 
 _SERVER: ThreadingHTTPServer | None = None
@@ -103,6 +112,22 @@ def _daily_interest_amount(balance: float, annual_rate_percent: float) -> float:
     return balance * ((annual_rate_percent / 100.0) / 365.0)
 
 
+def _is_liability_label(name: str, account_type: str) -> bool:
+    text = f"{account_type} {name}".lower()
+    return any(word in text for word in ("credit", "loan", "mortgage"))
+
+
+def _net_worth_from_balances(
+    balances: list[tuple[str, str, float | None]],
+) -> tuple[float | None, float | None, float | None]:
+    known = [(name, account_type, value) for name, account_type, value in balances if value is not None]
+    if not known:
+        return None, None, None
+    assets = sum(value for name, account_type, value in known if not _is_liability_label(name, account_type))
+    liabilities = sum(abs(value) for name, account_type, value in known if _is_liability_label(name, account_type))
+    return assets, liabilities, assets - liabilities
+
+
 def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
     absolute = year * 12 + (month - 1) + delta
     shifted_year = absolute // 12
@@ -150,6 +175,9 @@ def simulate_month(
                 account_balances=[
                     (account.name, account.account_type, None) for account in data.accounts
                 ],
+                total_assets=None,
+                total_liabilities=None,
+                net_worth=None,
             )
             for day in range(1, target_end.day + 1)
         }
@@ -260,15 +288,17 @@ def simulate_month(
             note = ""
             if current_date < main_snapshot:
                 note = "No loaded historical data for this day."
+            account_balances = [
+                (account.name, account.account_type, current_balances.get(account.id))
+                for account in data.accounts
+            ]
+            total_assets, total_liabilities, net_worth = _net_worth_from_balances(account_balances)
             summaries[current_date.day] = DaySummary(
                 day=current_date.day,
                 running_balance=current_balances.get(main_account.id),
                 events=events + interest_events,
                 note=note,
-                account_balances=[
-                    (account.name, account.account_type, current_balances.get(account.id))
-                    for account in data.accounts
-                ],
+                account_balances=account_balances,
                 interest_earned_today=interest_today,
                 interest_earned_month=[
                     (
@@ -279,6 +309,9 @@ def simulate_month(
                     for account in data.accounts
                     if monthly_interest_by_account[account.id] > 0
                 ],
+                total_assets=total_assets,
+                total_liabilities=total_liabilities,
+                net_worth=net_worth,
             )
 
         current_date += timedelta(days=1)
@@ -292,6 +325,11 @@ def simulate_month(
         (account.name, account.account_type, monthly_interest_by_account[account.id])
         for account in data.accounts
         if monthly_interest_by_account[account.id] > 0
+    ]
+    net_worth_values = [
+        summary.net_worth
+        for _, summary in sorted(summaries.items())
+        if summary.net_worth is not None
     ]
 
     return MonthSimulation(
@@ -307,6 +345,10 @@ def simulate_month(
         maximum_main_balance=max(main_values) if main_values else None,
         monthly_interest_totals=monthly_interest_totals,
         total_monthly_interest=sum(value for _, _, value in monthly_interest_totals),
+        opening_net_worth=net_worth_values[0] if net_worth_values else None,
+        closing_net_worth=net_worth_values[-1] if net_worth_values else None,
+        minimum_net_worth=min(net_worth_values) if net_worth_values else None,
+        maximum_net_worth=max(net_worth_values) if net_worth_values else None,
     )
 
 
@@ -361,6 +403,11 @@ def build_calendar_html(
                     + "</strong></li>"
                     for name, account_type, value in summary.account_balances
                 )
+                net_worth_detail = (
+                    f"<li><span>Assets</span><strong>{html.escape(_format_balance(summary.total_assets))}</strong></li>"
+                    f"<li><span>Liabilities</span><strong>{html.escape(_format_balance(summary.total_liabilities))}</strong></li>"
+                    f"<li><span>Net worth</span><strong>{html.escape(_format_balance(summary.net_worth))}</strong></li>"
+                )
                 interest_today = "".join(
                     "<li><span>"
                     + _account_badge(name, account_type)
@@ -380,12 +427,14 @@ def build_calendar_html(
 
                 cell = f"""
                 <td class=\"{classes}\">
-                    <div class=\"day-number\">{current_date.day}</div>
+                    <div class=\"day-number\" tabindex=\"0\">{current_date.day}</div>
                     <div class=\"{balance_class}\">{balance_html}</div>
                     <ul class=\"events\">{events}</ul>
                     <div class=\"detail-card\">
                         <div class=\"detail-title\">{current_date.strftime('%A, %B')} {current_date.day}</div>
-                        <div class=\"detail-subtitle\">End-of-day account balances</div>
+                        <div class=\"detail-subtitle\">End-of-day net worth</div>
+                        <ul class=\"balance-list\">{net_worth_detail}</ul>
+                        <div class=\"detail-subtitle section-gap\">End-of-day account balances</div>
                         <ul class=\"balance-list\">{balances}</ul>
                         <div class=\"detail-subtitle section-gap\">Interest earned today</div>
                         <ul class=\"balance-list\">{interest_today}</ul>
@@ -412,6 +461,8 @@ def build_calendar_html(
             _summary_card("Closing main balance", _format_balance(simulation.closing_main_balance)),
             _summary_card("Lowest main balance", _format_balance(simulation.minimum_main_balance), "warning"),
             _summary_card("Highest main balance", _format_balance(simulation.maximum_main_balance), "success"),
+            _summary_card("Net worth", _format_balance(simulation.closing_net_worth), "success"),
+            _summary_card("Lowest net worth", _format_balance(simulation.minimum_net_worth), "warning"),
             _summary_card("Projected interest this month", f"${simulation.total_monthly_interest:,.2f}", "interest"),
         ]
     )
@@ -453,13 +504,14 @@ def build_calendar_html(
     td {{ border: 1px solid #d1d5db; vertical-align: top; height: 170px; padding: 10px; background: white; overflow: visible; }}
     .day-cell {{ position: relative; overflow: visible; }}
     .muted {{ background: #eef2f7; }}
-    .day-number {{ font-weight: bold; margin-bottom: 8px; }}
+    .day-number {{ display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; font-weight: bold; margin-bottom: 8px; border-radius: 999px; cursor: help; }}
+    .day-number:hover, .day-number:focus {{ background: #dbeafe; color: #1d4ed8; outline: none; }}
     .balance {{ font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #0f766e; }}
     .balance.negative {{ color: #b91c1c; }}
     .balance.na {{ color: #64748b; }}
     .events {{ margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.4; }}
     .detail-card {{ position: absolute; left: 10px; top: 40px; width: 320px; max-width: min(320px, calc(100vw - 32px)); max-height: min(70vh, 560px); overflow: auto; background: #111827; color: white; border-radius: 10px; padding: 12px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28); opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease; z-index: 50; }}
-    .day-cell:hover .detail-card, .day-cell:focus-within .detail-card {{ opacity: 1; visibility: visible; transform: translateY(0); }}
+    .day-number:hover ~ .detail-card, .day-number:focus ~ .detail-card {{ opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0.5s; }}
     .detail-card.flip-x {{ left: auto; right: 10px; }}
     .detail-card.flip-y {{ top: auto; bottom: 40px; }}
     .detail-title {{ font-weight: 700; margin-bottom: 4px; }}
@@ -481,7 +533,7 @@ def build_calendar_html(
 <body>
   <div class=\"nav\">
     <a class=\"nav-link\" href=\"{html.escape(prev_href)}\">← Previous month</a>
-    <div class=\"nav-title\">{html.escape(month_name)} {simulation.year}</div>
+    <div class=\"nav-title\"><a class=\"nav-link\" href=\"/net-worth?year={simulation.year}&month={simulation.month}\">Net worth</a> · {html.escape(month_name)} {simulation.year}</div>
     <a class=\"nav-link\" href=\"{html.escape(next_href)}\">Next month →</a>
   </div>
   <div class=\"meta\">{html.escape(meta)}</div>
@@ -522,8 +574,10 @@ def build_calendar_html(
         }}
       }}
       cells.forEach((cell) => {{
-        cell.addEventListener('mouseenter', () => requestAnimationFrame(() => positionCard(cell)));
-        cell.addEventListener('focusin', () => requestAnimationFrame(() => positionCard(cell)));
+        const trigger = cell.querySelector('.day-number');
+        if (!trigger) return;
+        trigger.addEventListener('mouseenter', () => setTimeout(() => positionCard(cell), 500));
+        trigger.addEventListener('focusin', () => setTimeout(() => positionCard(cell), 500));
         cell.addEventListener('mouseleave', () => {{
           const card = cell.querySelector('.detail-card');
           if (card) card.classList.remove('flip-x', 'flip-y');
@@ -539,11 +593,69 @@ def build_calendar_html(
 """
 
 
+def build_net_worth_html(simulation: MonthSimulation) -> str:
+    month_name = calendar.month_name[simulation.month]
+    latest = simulation.days[max(simulation.days)] if simulation.days else None
+    account_rows = ""
+    if latest:
+        for name, account_type, value in latest.account_balances:
+            role = "Liability" if _is_liability_label(name, account_type) else "Asset"
+            account_rows += (
+                "<li><span>"
+                + _account_badge(name, account_type)
+                + f" <em>{role}</em></span><strong>{html.escape(_format_balance(value))}</strong></li>"
+            )
+    daily_rows = "".join(
+        f"<tr><td>{day}</td><td>{html.escape(_format_balance(summary.total_assets))}</td>"
+        f"<td>{html.escape(_format_balance(summary.total_liabilities))}</td>"
+        f"<td>{html.escape(_format_balance(summary.net_worth))}</td></tr>"
+        for day, summary in sorted(simulation.days.items())
+    )
+    return f"""
+<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"UTF-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+  <title>Net Worth - {html.escape(month_name)} {simulation.year}</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #f4f7fb; color: #1f2937; }}
+    .nav {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }}
+    .nav-link {{ color: #1d4ed8; text-decoration: none; font-weight: 600; }}
+    .title {{ font-size: 24px; font-weight: 700; }}
+    .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }}
+    .summary-card, .panel {{ background: white; border: 1px solid #dbe2ea; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06); margin-bottom: 16px; }}
+    .summary-label {{ font-size: 12px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }}
+    .summary-value {{ font-size: 24px; font-weight: 700; }}
+    .balance-list {{ list-style: none; padding: 0; margin: 0; }}
+    .balance-list li {{ display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid #e5e7eb; }}
+    .balance-list li:first-child {{ border-top: 0; }}
+    .account-badge {{ display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 8px; font-size: 12px; font-weight: 600; }}
+    .account-badge.checking {{ background: #dbeafe; color: #1d4ed8; }} .account-badge.savings {{ background: #dcfce7; color: #15803d; }} .account-badge.brokerage {{ background: #ede9fe; color: #7c3aed; }} .account-badge.credit {{ background: #fee2e2; color: #b91c1c; }} .account-badge.cash {{ background: #fef3c7; color: #b45309; }} .account-badge.other {{ background: #e5e7eb; color: #374151; }}
+    table {{ width: 100%; border-collapse: collapse; background: white; }} th, td {{ border: 1px solid #d1d5db; padding: 10px; text-align: right; }} th:first-child, td:first-child {{ text-align: left; }} th {{ background: #111827; color: white; }}
+  </style>
+</head>
+<body>
+  <div class=\"nav\"><a class=\"nav-link\" href=\"/calendar?year={simulation.year}&month={simulation.month}\">← Calendar</a><div class=\"title\">Net Worth · {html.escape(month_name)} {simulation.year}</div><span></span></div>
+  <section class=\"summary-grid\">
+    {_summary_card("Assets", _format_balance(latest.total_assets if latest else None))}
+    {_summary_card("Liabilities", _format_balance(latest.total_liabilities if latest else None), "warning")}
+    {_summary_card("Net worth", _format_balance(latest.net_worth if latest else None), "success")}
+    {_summary_card("Month low", _format_balance(simulation.minimum_net_worth), "warning")}
+    {_summary_card("Month high", _format_balance(simulation.maximum_net_worth), "success")}
+  </section>
+  <section class=\"panel\"><h2>Accounts</h2><ul class=\"balance-list\">{account_rows}</ul></section>
+  <section class=\"panel\"><h2>Daily projection</h2><table><thead><tr><th>Day</th><th>Assets</th><th>Liabilities</th><th>Net worth</th></tr></thead><tbody>{daily_rows}</tbody></table></section>
+</body>
+</html>
+"""
+
+
 def _server_handler_factory():
     class CalendarHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
-            if parsed.path not in {"/", "/calendar"}:
+            if parsed.path not in {"/", "/calendar", "/net-worth"}:
                 self.send_response(404)
                 self.end_headers()
                 self.wfile.write(b"Not found")
@@ -560,9 +672,12 @@ def _server_handler_factory():
 
             data = load_data()
             simulation = simulate_month(data, year, month, opening_balance)
-            payload = build_calendar_html(
-                simulation, opening_balance=opening_balance
-            )
+            if parsed.path == "/net-worth":
+                payload = build_net_worth_html(simulation)
+            else:
+                payload = build_calendar_html(
+                    simulation, opening_balance=opening_balance
+                )
 
             encoded = payload.encode("utf-8")
             self.send_response(200)

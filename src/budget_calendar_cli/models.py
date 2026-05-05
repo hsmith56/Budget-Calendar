@@ -23,6 +23,9 @@ class Account:
     interest_rate: float = 0.0
     interest_compounding: str = "daily"
     account_type: str = ""
+    plaid_access_token: str = ""
+    plaid_item_id: str = ""
+    plaid_account_id: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -38,6 +41,9 @@ class Account:
             interest_rate=float(payload.get("interest_rate", 0.0)),
             interest_compounding=payload.get("interest_compounding", "daily"),
             account_type=payload.get("account_type", default_account_type(payload["kind"])),
+            plaid_access_token=payload.get("plaid_access_token", ""),
+            plaid_item_id=payload.get("plaid_item_id", ""),
+            plaid_account_id=payload.get("plaid_account_id", ""),
         )
 
 
@@ -135,6 +141,9 @@ class BudgetData:
     scheduled_payments: list[ScheduledPayment] = field(default_factory=list)
     recurring_payments: list[RecurringPayment] = field(default_factory=list)
     main_account_id: str = ""
+    plaid_liabilities: dict = field(default_factory=dict)
+    plaid_investments: dict = field(default_factory=dict)
+    plaid_recurring_transactions: dict = field(default_factory=dict)
 
     @classmethod
     def default(cls) -> "BudgetData":
@@ -158,6 +167,9 @@ class BudgetData:
             "scheduled_payments": [payment.to_dict() for payment in self.scheduled_payments],
             "recurring_payments": [payment.to_dict() for payment in self.recurring_payments],
             "main_account_id": self.main_account_id,
+            "plaid_liabilities": self.plaid_liabilities,
+            "plaid_investments": self.plaid_investments,
+            "plaid_recurring_transactions": self.plaid_recurring_transactions,
         }
 
     @classmethod
@@ -173,6 +185,9 @@ class BudgetData:
                 for item in payload.get("recurring_payments", [])
             ],
             main_account_id=payload.get("main_account_id", ""),
+            plaid_liabilities=payload.get("plaid_liabilities", {}),
+            plaid_investments=payload.get("plaid_investments", {}),
+            plaid_recurring_transactions=payload.get("plaid_recurring_transactions", {}),
         )
         if not data.accounts:
             return cls.default()

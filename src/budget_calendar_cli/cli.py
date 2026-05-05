@@ -6,6 +6,7 @@ from pathlib import Path
 from budget_calendar_cli.calendar_view import open_calendar_in_browser
 from budget_calendar_cli.importer import import_onboarding_file
 from budget_calendar_cli.models import Account, RecurringPayment, ScheduledPayment, new_id
+from budget_calendar_cli.plaid_link import link_plaid_accounts, pull_plaid_enrichment, refresh_plaid_accounts, update_plaid_permissions
 from budget_calendar_cli.storage import DATA_FILE, load_data, save_data
 
 WEEKDAYS = {
@@ -18,7 +19,7 @@ WEEKDAYS = {
     "sunday": 6,
 }
 
-ACCOUNT_TYPES = ["checking", "savings", "brokerage", "credit", "cash", "other"]
+ACCOUNT_TYPES = ["checking", "savings", "brokerage", "credit", "loan", "mortgage", "cash", "other"]
 
 
 def prompt_text(label: str, allow_blank: bool = False) -> str:
@@ -130,6 +131,26 @@ def print_accounts(data) -> None:
     print("-" * 60)
     for index, account in enumerate(data.accounts, start=1):
         print(f"{index}. {format_account_line(account, account.id == data.main_account_id)}")
+    print()
+
+
+def account_is_liability(account) -> bool:
+    text = f"{account.account_type} {account.name}".lower()
+    return any(word in text for word in ("credit", "loan", "mortgage"))
+
+
+def print_net_worth(data) -> None:
+    assets = sum(account.balance for account in data.accounts if not account_is_liability(account))
+    liabilities = sum(abs(account.balance) for account in data.accounts if account_is_liability(account))
+    print("\nNet worth")
+    print("-" * 60)
+    print(f"Assets: {format_money(assets)}")
+    print(f"Liabilities: {format_money(liabilities)}")
+    print(f"Net worth: {format_money(assets - liabilities)}")
+    print("\nAccounts")
+    for account in data.accounts:
+        role = "liability" if account_is_liability(account) else "asset"
+        print(f"- {account.name} [{account.account_type}, {role}]: {format_money(account.balance)}")
     print()
 
 
@@ -432,7 +453,11 @@ def print_menu() -> None:
     print("8. View recurring payments and transfers")
     print("9. Import onboarding text file")
     print("10. Open calendar view in browser")
-    print("11. Exit")
+    print("11. Link Plaid account")
+    print("12. Pull Plaid data")
+    print("13. Update Plaid permissions")
+    print("14. View net worth")
+    print("15. Exit")
 
 
 def main() -> None:
@@ -442,7 +467,7 @@ def main() -> None:
     while True:
         print()
         print_menu()
-        choice = prompt_int("Choose an option: ", minimum=1, maximum=11)
+        choice = prompt_int("Choose an option: ", minimum=1, maximum=15)
 
         if choice == 1:
             print_accounts(data)
@@ -464,6 +489,36 @@ def main() -> None:
             import_onboarding(data)
         elif choice == 10:
             open_calendar(data)
+        elif choice == 11:
+            try:
+                link_plaid_accounts(data)
+            except RuntimeError as exc:
+                print(f"Plaid setup error: {exc}")
+        elif choice == 12:
+            try:
+                updated, missing = refresh_plaid_accounts(data)
+                summary = pull_plaid_enrichment(data)
+                print(f"Pulled Plaid data. Updated {updated} account(s).")
+                print(f"Recurring streams: {summary['recurring_streams']} found, {summary['recurring_payments_added']} added.")
+                print(f"Liability records: {summary['liability_items']} stored.")
+                print(f"Investment holdings: {summary['investment_holdings']} stored.")
+                if missing:
+                    print(f"Skipped {missing} Plaid account(s) not yet stored locally.")
+                for error in summary["errors"]:
+                    print(f"Plaid detail warning: {error}")
+            except RuntimeError as exc:
+                print(f"Plaid setup error: {exc}")
+            except Exception as exc:
+                print(f"Plaid pull failed: {exc}")
+        elif choice == 13:
+            try:
+                update_plaid_permissions(data)
+            except RuntimeError as exc:
+                print(f"Plaid setup error: {exc}")
+            except Exception as exc:
+                print(f"Plaid permission update failed: {exc}")
+        elif choice == 14:
+            print_net_worth(data)
         else:
             print("Goodbye.")
             return
