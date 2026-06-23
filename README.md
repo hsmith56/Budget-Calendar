@@ -1,18 +1,49 @@
-# Budget Calendar
+<a id="readme-top"></a>
 
-CLI budget planner for tracking account balances, scheduled payments, recurring transfers, Plaid-linked accounts, and projected monthly cash flow in a browser calendar.
+<div align="center">
+  <h3 align="center">Budget Calendar</h3>
 
-## About
+  <p align="center">
+    CLI budget planner for account balances, scheduled payments, recurring transfers, Plaid-linked accounts, and projected monthly cash flow.
+    <br />
+    <a href="https://github.com/hsmith56/Budget-Calendar"><strong>View repository »</strong></a>
+  </p>
+</div>
+
+
+
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#built-with">Built With</a></li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#data-storage">Data Storage</a></li>
+    <li><a href="#plaid-setup">Plaid Setup</a></li>
+    <li><a href="#onboarding-import">Onboarding Import</a></li>
+    <li><a href="#development">Development</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
 Budget Calendar stores local budget data in JSON, then uses that data to forecast daily balances, net worth, recurring payments, transfers, and daily-compounding account interest. It includes an interactive terminal menu plus browser-based calendar and net-worth views.
 
-## Built With
-
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/)
-- [Plaid Python](https://github.com/plaid/plaid-python)
-
-## Features
+### Features
 
 - Manage main, payout, checking, savings, brokerage, credit, loan, mortgage, cash, and other accounts
 - Track one-time scheduled payments
@@ -24,9 +55,28 @@ Budget Calendar stores local budget data in JSON, then uses that data to forecas
 - Import onboarding text files from a simple template
 - Link Plaid accounts, refresh balances, and import Plaid recurring transaction/liability/investment data
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- BUILT WITH -->
+## Built With
+
+[![Python][python-shield]][python-url]
+[![uv][uv-shield]][uv-url]
+[![Plaid][plaid-shield]][plaid-url]
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- GETTING STARTED -->
 ## Getting Started
 
 ### Prerequisites
+
+- Python 3.11+
+- `uv`
 
 Install `uv` if needed:
 
@@ -36,13 +86,27 @@ pip install uv
 
 ### Installation
 
+Clone repository:
+
+```bash
+git clone https://github.com/hsmith56/Budget-Calendar.git
+cd Budget-Calendar
+```
+
+Install dependencies:
+
 ```bash
 uv sync
 ```
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- USAGE -->
 ## Usage
 
-Start the CLI:
+Start CLI:
 
 ```bash
 uv run budget-calendar
@@ -54,7 +118,7 @@ Alternative entry point:
 uv run python BudgetCalendar.py
 ```
 
-The menu supports:
+Menu options:
 
 1. View accounts
 2. Add payout account
@@ -72,6 +136,11 @@ The menu supports:
 14. View net worth
 15. Exit
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- DATA STORAGE -->
 ## Data Storage
 
 Budget data is stored locally:
@@ -88,6 +157,11 @@ Generated calendar/server assets live under:
 
 > Plaid access tokens are stored in `.budget_calendar/data.json`. Keep this file private and do not commit it.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- PLAID SETUP -->
 ## Plaid Setup
 
 Plaid features require environment variables:
@@ -102,6 +176,11 @@ PLAID_ENV=sandbox
 
 Use CLI option `11. Link Plaid account` after setting credentials. Use option `12. Pull Plaid data` to refresh balances and import supported enrichment data.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ONBOARDING IMPORT -->
 ## Onboarding Import
 
 Use menu option `9. Import onboarding text file`.
@@ -147,9 +226,14 @@ RECURRING TRANSFERS    FROM    TO
 Chase to Vio    2100.00    5th every month    Chase Checking    Vio Savings    Monthly savings transfer
 ```
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- DEVELOPMENT -->
 ## Development
 
-Run the CLI from source:
+Run CLI from source:
 
 ```bash
 uv run budget-calendar
@@ -169,8 +253,47 @@ uv build
 
 No test command is currently defined in `pyproject.toml`.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- LICENSE -->
 ## License
 
 Copyright © 2021 hsmith56.
 
 This project may not be copied or distributed without express permission. See [`license`](license).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTACT -->
+## Contact
+
+hsmith56 - hsmith56@pm.me
+
+Project Link: [https://github.com/hsmith56/Budget-Calendar](https://github.com/hsmith56/Budget-Calendar)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+
+- README structure inspired by [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
+- [uv](https://docs.astral.sh/uv/)
+- [Plaid Python](https://github.com/plaid/plaid-python)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+[python-shield]: https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white
+[python-url]: https://www.python.org/
+[uv-shield]: https://img.shields.io/badge/uv-package%20manager-2B0231?style=for-the-badge
+[uv-url]: https://docs.astral.sh/uv/
+[plaid-shield]: https://img.shields.io/badge/Plaid-Python-00D54B?style=for-the-badge
+[plaid-url]: https://github.com/plaid/plaid-python
